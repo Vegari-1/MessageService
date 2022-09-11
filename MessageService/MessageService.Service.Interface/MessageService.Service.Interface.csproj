@@ -9,4 +9,10 @@
   <ItemGroup>
     <ProjectReference Include="..\MessageService.Repository.Interface\MessageService.Repository.Interface.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="BusService" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="BusService" Version="1.0.0-dev.13" />
+  </ItemGroup>
 </Project>

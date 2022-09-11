@@ -1,20 +1,40 @@
-﻿using MessageService.Middlwares;
-using MessageService.Repository;
-using MessageService.Repository.Interface;
-using MessageService.Service.Interface;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
+
 using OpenTracing;
+using OpenTracing.Contrib.NetCore.Configuration;
+using OpenTracing.Util;
+using Prometheus;
 using Jaeger.Reporters;
 using Jaeger;
 using Jaeger.Senders.Thrift;
 using Jaeger.Samplers;
-using OpenTracing.Contrib.NetCore.Configuration;
-using OpenTracing.Util;
-using Prometheus;
+
+using BusService;
+
+using MessageService.Middlwares;
+using MessageService.Repository;
+using MessageService.Repository.Interface;
+using MessageService.Service.Interface;
+using MessageService.JobOfferMessaging;
+using MessageService.Hubs;
+using MessageService.Middlewares.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Default Logger
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+
+// Event middleware deps
+builder.Services.Configure<AppConfig>(
+    builder.Configuration.GetSection("AppConfig"));
+
+// Nats
+builder.Services.Configure<MessageBusSettings>(builder.Configuration.GetSection("Nats"));
+builder.Services.AddSingleton<IMessageBusSettings>(serviceProvider =>
+    serviceProvider.GetRequiredService<IOptions<MessageBusSettings>>().Value);
+builder.Services.AddSingleton<IMessageBusService, MessageBusService>();
+builder.Services.AddHostedService<MessageServiceBusHostedService>();
 
 // Mongo
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
@@ -22,13 +42,25 @@ builder.Services.AddSingleton<IMongoDbSettings>(serviceProvider =>
     serviceProvider.GetRequiredService<IOptions<MongoDbSettings>>().Value);
 
 // Repositories
-builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
 
 // Services
-builder.Services.AddScoped<IMessageService, MessageService.Service.MessageService>();
+builder.Services.AddScoped<IConversationService, MessageService.Service.ConversationService>();
 
+// Sync services
+builder.Services.AddScoped<IProfileSyncService, MessageService.Service.ProfileSyncService>();
+builder.Services.AddScoped<IEventSyncService, MessageService.Service.EventSyncService>();
+builder.Services.AddScoped<IMessageSyncService, MessageService.Service.MessageSyncService>();
+
+// Controllers
 builder.Services.AddControllers();
+
+// Automapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+// SignarR
+builder.Services.AddSignalR();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -36,8 +68,8 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new() { Title = "MessageService", Version = "v1" });
 });
 
+// Tracing
 builder.Services.AddOpenTracing();
-
 builder.Services.AddSingleton<ITracer>(sp =>
 {
     var serviceName = sp.GetRequiredService<IWebHostEnvironment>().ApplicationName;
@@ -74,16 +106,20 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
 app.MapControllers();
 
 app.UseMiddleware<ExceptionHandlerMiddleware>();
+app.UseEventSenderMiddleware();
 
 // Prometheus metrics
 app.UseMetricServer();
 
+// SignalR
+app.MapHub<ConversationHub>("/conversationHub");
+
 app.Run();
 
+namespace MessageService
+{
+    public partial class Program { }
+}
