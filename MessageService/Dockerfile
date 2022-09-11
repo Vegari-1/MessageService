@@ -1,10 +1,12 @@
 FROM mcr.microsoft.com/dotnet/aspnet:6.0-focal AS base
 WORKDIR /app
-EXPOSE 5004
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0-focal AS build
+ARG github_username
+ARG github_pat
 WORKDIR /src
 COPY MessageService/MessageService.csproj MessageService/
+COPY config/NuGet.Config .
 RUN dotnet restore MessageService/MessageService.csproj
 COPY . .
 WORKDIR /src/MessageService

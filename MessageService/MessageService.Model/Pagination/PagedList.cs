@@ -1,4 +1,5 @@
 ﻿using MongoDB.Driver;
+using System.Linq;
 
 namespace MessageService.Repository.Interface.Pagination;
 
@@ -31,6 +32,17 @@ public class PagedList<T>
                         .ToList();
 
         return new PagedList<TProjected>(items, (int)count, pageNumber, pageSize);
+    }
+
+    public static PagedList<TProjected> ToPagedList<TProjected>(IQueryable<TProjected> source, int pageNumber, int pageSize)
+    {
+        var count = source.Count();
+        var items = source
+                        .Skip((pageNumber - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToList();
+
+        return new PagedList<TProjected>(items, count, pageNumber, pageSize);
     }
 
     public PagedList<TMap> ToPagedList<TMap>(List<TMap> list)

@@ -5,6 +5,6 @@ namespace MessageService.Model;
 [BsonCollection("conversation")]
 public class Conversation : Document
 {
-    public ICollection<Profile> Participants { get; set; } = new List<Profile>();
-    public ICollection<Message> Messages { get; set; } = new List<Message>();
+    public List<Profile> Participants { get; set; } = new List<Profile>();
+    public List<Message> Messages { get; set; } = new List<Message>();
 }

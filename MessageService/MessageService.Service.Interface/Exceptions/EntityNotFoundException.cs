@@ -2,12 +2,12 @@
 namespace MessageService.Service.Interface.Exceptions
 {
 
-    public class EntityNotFoundException : BaseException
+    public class EntityAlreadyExistsException : BaseException
     {
-        public EntityNotFoundException(Type entityType, string entityFields) : base(
-             String.Format("{0} with given {1} does not exists", entityType.Name, entityFields))
+        public EntityAlreadyExistsException(Type entityType) : base(
+             String.Format("{0} already exists", entityType.Name))
         {
-            StatusCode = 404;
+            StatusCode = 409;
         }
     }
 }
