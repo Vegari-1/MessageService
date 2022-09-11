@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <None Remove="MongoDB.Driver" />
+    <None Remove="MongoDB\" />
+    <None Remove="Pagination\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Jaeger.Core" Version="1.0.3" />
@@ -18,5 +20,9 @@
     <PackageReference Include="prometheus-net" Version="6.0.0" />
     <PackageReference Include="prometheus-net.AspNetCore" Version="6.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="MongoDB\" />
+    <Folder Include="Pagination\" />
   </ItemGroup>
 </Project>
